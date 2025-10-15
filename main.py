@@ -72,3 +72,19 @@ async def read_sample_response():
     }
     
     return JSONResponse(content=sample_response)
+
+
+@app.get("/read/2", tags=["Data Operations"])
+async def read_sample_response():
+    """
+    샘플 JSON 응답을 출력합니다. (예시 응답)
+    """
+    sample_response = {
+        "id": 1,
+        "status": "Success",
+        "description": "https://outlook.office.com/bookwithme/user/19d8b0fd07fb46ea8c4cbc1df94a206c@fsisaas.onmicrosoft.com/meetingtype/VY9MweOvIUelXzj9DyCvEw2?bookingcode=9db3d39f-fa4f-45ad-b74c-28c871813443&anonymous&ep=mlink",
+        "security_level": "High",
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+    
+    return JSONResponse(content=sample_response)
