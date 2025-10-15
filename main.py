@@ -82,7 +82,7 @@ async def read_sample_response():
     sample_response = {
         "id": 1,
         "status": "Success",
-        "description": "https://outlook.office.com/bookwithme/user/19d8b0fd07fb46ea8c4cbc1df94a206c@fsisaas.onmicrosoft.com/meetingtype/VY9MweOvIUelXzj9DyCvEw2?bookingcode=9db3d39f-fa4f-45ad-b74c-28c871813443&anonymous&ep=mlink",
+        "description": "https://outlook.office.com/bookwithme/user/19d8b0fd07fb46ea8c4cbc1df94a206c@fsisaas.onmicrosoft.com/meetingtype/VY9MweOvIUelXzj9DyCvEw2?bookingcode=3020a097-168b-44b1-a71c-6c91beee888b&anonymous&ep=mlink",
         "security_level": "High",
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
