@@ -88,3 +88,22 @@ async def read_sample_response():
     }
     
     return JSONResponse(content=sample_response)
+
+
+
+
+@app.get("/read/3", tags=["Data Operations"])
+async def read_sample_response():
+    """
+    샘플 JSON 응답을 출력합니다. (예시 응답)
+    """
+    sample_response = {
+        "id": 1,
+        "status": "Success",
+        "description": "    https://teams.microsoft.com/l/meetup-join/19%3ameeting_YTJiNmE4MGEtOTkwOS00NWNiLTkxY2QtNWRkMzQ2M2RmZmRk%40thread.v2/0?context=%7b%22Tid%22%3a%222d73dce3-872e-44a5-bd02-3d05056d011a%22%2c%22Oid%22%3a%22f951410c-a3c4-4769-b2e8-41862e4624e5%22%7d",
+        "security_level": "High",
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+    
+    return JSONResponse(content=sample_response)
+
