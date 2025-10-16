@@ -135,3 +135,17 @@ async def read_sample_response():
     }
     
     return JSONResponse(content=sample_response)
+
+
+@app.get("/read/6", tags=["Data Operations"])
+async def read_sample_response():           
+    """
+    Loop 페이지 링크입니다.
+    """
+    sample_response = {
+        "id": 1,
+        "status": "Success",
+        "description": "https://fsisaas-my.sharepoint.com/personal/saas_fsisaas_onmicrosoft_com/Documents/%EC%95%B1/Microsoft%20Power%20Query/Uploaded%20Files/1.txt",
+    }
+    
+    return JSONResponse(content=sample_response)
