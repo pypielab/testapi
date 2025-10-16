@@ -91,7 +91,6 @@ async def read_sample_response():
 
 
 
-
 @app.get("/read/3", tags=["Data Operations"])
 async def read_sample_response():
     """
@@ -107,3 +106,17 @@ async def read_sample_response():
     
     return JSONResponse(content=sample_response)
 
+
+@app.get("/read/4", tags=["Data Operations"])
+async def read_sample_response():           
+    """
+    Loop 페이지 링크입니다.
+    """
+    sample_response = {
+        "id": 1,
+        "status": "Success",
+        "description": "https://home.microsoftpersonalcontent.com/:fl:/g/contentstorage/CSP_2f261637-da3c-44ca-b8ff-6183f50e9b9f/IQLeIG2TkHozTJA5aOxSSfC9ARxZXQ8Gpok3lsxNw7Do2TA?e=d0Qgwz&nav=cz0lMkZjb250ZW50c3RvcmFnZSUyRkNTUF8yZjI2MTYzNy1kYTNjLTQ0Y2EtYjhmZi02MTgzZjUwZTliOWYmZD1iJTIxTnhZbUx6emF5a1M0XzJHRDlRNmJuMEVsRUpkMjJXZE5pZWJaOTkzUXNJZERMcS1hdVdCS1E1WENYaVFia1JLbyZmPTAxWkpDTVgzTzZFQldaSEVEMkdOR0pBT0xJNVJKRVQ0RjUmYz0lMkYmYT1Mb29wQXBwJnA9JTQwZmx1aWR4JTJGbG9vcC1wYWdlLWNvbnRhaW5lciZ4PSU3QiUyMnclMjIlM0ElMjJUMFJUVUh4b2IyMWxMbTFwWTNKdmMyOW1kSEJsY25OdmJtRnNZMjl1ZEdWdWRDNWpiMjE4WWlGT2VGbHRUSHA2WVhsclV6UmZNa2RFT1ZFMlltNHdSV3hGU21ReU1sZGtUbWxsWWxvNU9UTlJjMGxrUkV4eExXRjFWMEpMVVRWWVExaHBVV0pyVWt0dmZEQXhXa3BEVFZnelMwc3pTRWRSVlRkSlNVMU9SbHBHVlRkT1VVbElSRU5JV2xBJTNEJTIyJTJDJTIyaSUyMiUzQSUyMmY2ZGQyMDQxLWQyNWMtNDFhYi1hZmZjLTJjZDRmMGU2MGZiOCUyMiU3RA%3D%3D",
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+    
+    return JSONResponse(content=sample_response)
