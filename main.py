@@ -1,6 +1,4 @@
-# main.py
-
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 import json
 from pathlib import Path
@@ -8,9 +6,9 @@ from datetime import datetime
 
 # FastAPI 애플리케이션 인스턴스 생성
 app = FastAPI(
-    title="금융보안 테스트 API",
-    description="데이터 로깅 및 샘플 응답 API",
-    version="1.0.0"
+    title="금융보안 테스트 API (WebSockets 추가됨)",
+    description="데이터 로깅, 샘플 응답 및 실시간 웹소켓 통신 API",
+    version="1.0.1"
 )
 
 # 로그 파일 경로 설정
@@ -28,6 +26,10 @@ async def startup_event():
         LOG_FILE_PATH.touch()
         print(f"로그 파일 생성: {LOG_FILE_PATH}")
 
+
+# =======================================================
+# 기존 REST API 엔드포인트
+# =======================================================
 
 @app.get("/insert/{data}", tags=["Data Operations"])
 async def insert_data(data: str):
@@ -59,9 +61,9 @@ async def insert_data(data: str):
         )
 
 @app.get("/read/1", tags=["Data Operations"])
-async def read_sample_response():
+async def read_sample_response_1(): # 함수 이름 수정
     """
-    샘플 JSON 응답을 출력합니다. (예시 응답)
+    샘플 JSON 응답 1을 출력합니다.
     """
     sample_response = {
         "id": 1,
@@ -75,12 +77,12 @@ async def read_sample_response():
 
 
 @app.get("/read/2", tags=["Data Operations"])
-async def read_sample_response():
+async def read_sample_response_2(): # 함수 이름 수정
     """
-    샘플 JSON 응답을 출력합니다. (예시 응답)
+    샘플 JSON 응답 2를 출력합니다.
     """
     sample_response = {
-        "id": 1,
+        "id": 2, # ID를 2로 변경하여 차별화
         "status": "Success",
         "description": "testURL",
         "security_level": "High",
@@ -90,4 +92,52 @@ async def read_sample_response():
     return JSONResponse(content=sample_response)
 
 
+# =======================================================
+# WebSocket 엔드포인트 추가
+# =======================================================
 
+@app.websocket("/ws/realtime")
+async def websocket_endpoint(websocket: WebSocket):
+    """
+    실시간 양방향 통신을 위한 WebSocket 엔드포인트입니다.
+    클라이언트가 메시지를 보내면, 서버는 타임스탬프를 붙여 다시 전송(에코)합니다.
+    
+    연결 주소: ws://[서버 주소]/ws/realtime
+    """
+    await websocket.accept()
+    client_addr = f"{websocket.client.host}:{websocket.client.port}"
+    print(f"WS 연결 수락: {client_addr}")
+    
+    try:
+        # 클라이언트에게 최초 연결 성공 메시지 전송
+        await websocket.send_json({
+            "status": "connected",
+            "message": "WebSocket 서버에 성공적으로 연결되었습니다."
+        })
+        
+        while True:
+            # 클라이언트로부터 메시지 수신
+            data = await websocket.receive_text()
+            
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            
+            # 서버 응답 메시지 구성 (JSON 형식으로 전송)
+            response_data = {
+                "type": "echo_response",
+                "received_data": data,
+                "server_timestamp": current_time,
+                "message": "서버가 메시지를 받아 시간을 포함하여 다시 전송합니다."
+            }
+            
+            # 클라이언트에게 JSON 데이터 전송
+            await websocket.send_json(response_data)
+            
+    except WebSocketDisconnect:
+        # 클라이언트 연결 해제 시 처리
+        print(f"WS 연결 해제: {client_addr}")
+    except Exception as e:
+        # 기타 예외 처리
+        print(f"WS 처리 중 오류 발생: {e}")
+    finally:
+        # 안전하게 연결 종료
+        await websocket.close()
