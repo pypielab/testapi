@@ -8,7 +8,7 @@
   },
   "api": {
     "type": "openapi",
-    "url": "https://port-0-testapi-mgq13w45c45ff710.sel3.cloudtype.app/.well-known/copilot-openapi.json"
+    "url": "https://port-0-testapi-mgq13w45c45ff710.sel3.cloudtype.app/.well-known/swagger2.json"
   },
   "capabilities": [
     "actions"

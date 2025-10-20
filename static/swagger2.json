@@ -1,0 +1,85 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Financial Security Test API",
+    "description": "Data logging and sample JSON responses API",
+    "version": "1.0.1"
+  },
+  "host": "port-0-testapi-mgq13w45c45ff710.sel3.cloudtype.app",
+  "schemes": ["https"],
+  "basePath": "/",
+  "paths": {
+    "/insert/{data}": {
+      "get": {
+        "summary": "Insert Data",
+        "description": "Stores received data to a log file.",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" },
+                "inserted_data": { "type": "string" },
+                "timestamp": { "type": "string" },
+                "file": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/read/1": {
+      "get": {
+        "summary": "Read Sample Response 1",
+        "description": "Returns sample JSON 1.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "integer" },
+                "status": { "type": "string" },
+                "description": { "type": "string" },
+                "security_level": { "type": "string" },
+                "timestamp": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/read/2": {
+      "get": {
+        "summary": "Read Sample Response 2",
+        "description": "Returns sample JSON 2.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "integer" },
+                "status": { "type": "string" },
+                "description": { "type": "string" },
+                "security_level": { "type": "string" },
+                "timestamp": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
