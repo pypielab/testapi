@@ -16,7 +16,7 @@ app = FastAPI(
     openapi_version="3.0.3"  # ✅ 중요: 3.0.x로 지정
 )
 
-
+"""
 # CORS 허용 (Copilot Studio 요청 허용)
 app.add_middleware(
     CORSMiddleware,
@@ -25,7 +25,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+"""
 
 
 # 정적 파일 서빙
