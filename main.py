@@ -16,16 +16,19 @@ app = FastAPI(
     openapi_version="3.0.3"  # ✅ 중요: 3.0.x로 지정
 )
 
-"""
-# CORS 허용 (Copilot Studio 요청 허용)
+origins = [
+    "*"  # 모든 오리진 허용 (개발/테스트 용), 보안상 특정 도메인만 허용하는 것이 좋음
+    # Copilot Studio에서 요청하는 도메인을 명시적으로 추가
+    # 예: "https://copilotstudio.microsoft.com", "https://copilotstudio-prod.microsoft.com"
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-"""
 
 
 # 정적 파일 서빙
