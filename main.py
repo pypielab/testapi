@@ -11,7 +11,8 @@ from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI(
     title="금융보안 테스트 API (WebSockets 추가됨)",
     description="데이터 로깅, 샘플 응답 및 실시간 웹소켓 통신 API",
-    version="1.0.1"
+    version="1.0.1",
+    openapi_version="3.0.3"  # ✅ 중요: 3.0.x로 지정
 )
 
 
