@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 import json
 from pathlib import Path
 from datetime import datetime
+from fastapi.openapi.utils import get_openapi
 
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -30,6 +31,21 @@ app.add_middleware(
 # 정적 파일 서빙
 app.mount("/.well-known", StaticFiles(directory="static"), name="static")
 
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+    )
+    # ✅ 강제로 3.0.3으로 지정
+    openapi_schema["openapi"] = "3.0.3"
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi
 
 
 # 로그 파일 경로 설정
