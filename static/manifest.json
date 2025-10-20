@@ -1,0 +1,17 @@
+{
+  "$schema": "https://aka.ms/json-schemas/copilot-plugins/manifest.schema.json",
+  "name": "FastAPI Cloudtype Plugin",
+  "description": "Cloudtype에 배포된 FastAPI 서버와 Copilot Studio를 연결하는 플러그인입니다.",
+  "namespace": "fastapiCloudtype",
+  "auth": {
+    "type": "none"
+  },
+  "api": {
+    "type": "openapi",
+    "url": "https://port-0-testapi-mgq13w45c45ff710.sel3.cloudtype.app/openapi.json"
+  },
+  "capabilities": [
+    "actions"
+  ],
+  "version": "1.0.0"
+}

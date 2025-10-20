@@ -4,12 +4,32 @@ import json
 from pathlib import Path
 from datetime import datetime
 
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
+
 # FastAPI 애플리케이션 인스턴스 생성
 app = FastAPI(
     title="금융보안 테스트 API (WebSockets 추가됨)",
     description="데이터 로깅, 샘플 응답 및 실시간 웹소켓 통신 API",
     version="1.0.1"
 )
+
+
+# CORS 허용 (Copilot Studio 요청 허용)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+
+# 정적 파일 서빙
+app.mount("/.well-known", StaticFiles(directory="static"), name="static")
+
+
 
 # 로그 파일 경로 설정
 # 컨테이너 환경에서 쓰기 권한이 있는 경로를 사용합니다.
