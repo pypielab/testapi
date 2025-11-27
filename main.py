@@ -126,8 +126,8 @@ async def read_sample_response_2(): # 함수 이름 수정
         "status": "Success",
         "description": "testURL",
         "security_level": "High",
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    }
+        "timestamp": "EdHHa8Y_hEJJgiqvNdZccvoB0vtNM19aqaT5XxeDp9qYxA "
+   }
     
     return JSONResponse(content=sample_response)
 
