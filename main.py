@@ -214,9 +214,56 @@ async def read_json():
         "encoding": "base64",
         "data": base64_text
     }
+
+
+from fastapi import FastAPI, Request
+from datetime import datetime
+
+app = FastAPI()
+
+@app.get("/security/test")
+async def security_test(request: Request):
+    """
+    본인 서버 접속 정보 확인용 보안 테스트 엔드포인트
+    """
+    # 1. 인증 헤더 수집
+    auth_headers = {
+        "authorization": request.headers.get("authorization"),
+        "x-api-key": request.headers.get("x-api-key"),
+        "x-token": request.headers.get("x-token"),
+    }
+
+    # 2. 쿠키 수집
+    cookies = dict(request.cookies)
+
+    # 3. 전체 헤더 수집
+    all_headers = dict(request.headers)
+
+    # 4. 클라이언트 정보
+    client_info = {
+        "ip": request.client.host,
+        "port": request.client.port,
+        "user_agent": request.headers.get("user-agent"),
+    }
+
+    # 5. 결과 로그 저장
+    log_entry = {
+        "timestamp": datetime.now().isoformat(),
+        "client": client_info,
+        "auth_headers": auth_headers,
+        "cookies": cookies,
+        "all_headers": all_headers,
+    }
+
+    # 파일에 로그 저장
+    with open("security_log.txt", "a", encoding="utf-8") as f:
+        f.write(str(log_entry) + "\n")
+
+    return log_entry
 # =======================================================
 # WebSocket 엔드포인트 추가
 # =======================================================
+
 
 @app.websocket("/ws/realtime")
 async def websocket_endpoint(websocket: WebSocket):
