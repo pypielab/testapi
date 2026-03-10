@@ -219,7 +219,6 @@ async def read_json():
 from fastapi import FastAPI, Request
 from datetime import datetime
 
-app = FastAPI()
 
 @app.get("/security/test")
 async def security_test(request: Request):
