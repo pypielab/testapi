@@ -192,6 +192,28 @@ async def read_9():
     
     return PlainTextResponse(content=base64_text)
 
+
+
+@app.get("/read/json")
+async def read_json():
+    """
+    adb.exe 파일을 Base64로 인코딩하여 JSON으로 반환합니다.
+    """
+    import base64
+    
+    file_path = "adb.exe"
+    
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="adb.exe 파일을 찾을 수 없습니다.")
+    
+    with open(file_path, "rb") as f:
+        base64_text = base64.b64encode(f.read()).decode('utf-8')
+    
+    return {
+        "filename": "adb.exe",
+        "encoding": "base64",
+        "data": base64_text
+    }
 # =======================================================
 # WebSocket 엔드포인트 추가
 # =======================================================
