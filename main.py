@@ -240,8 +240,8 @@ async def security_test(request: Request):
 
     # 4. 클라이언트 정보
     client_info = {
-        "ip": request.client.host,
-        "port": request.client.port,
+        "ip": request.client.host if request.client else None,
+        "port": request.client.port if request.client else None,
         "user_agent": request.headers.get("user-agent"),
     }
 
@@ -254,8 +254,8 @@ async def security_test(request: Request):
         "all_headers": all_headers,
     }
 
-    # 파일에 로그 저장
-    with open("security_log.txt", "a", encoding="utf-8") as f:
+    # /tmp 경로에 로그 저장 (권한 문제 해결)
+    with open("/tmp/security_log.txt", "a", encoding="utf-8") as f:
         f.write(str(log_entry) + "\n")
 
     return log_entry
