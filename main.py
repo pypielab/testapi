@@ -7,10 +7,15 @@ from fastapi.openapi.utils import get_openapi
 
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from groq import Groq
+import os
+
+
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 
 # FastAPI 애플리케이션 인스턴스 생성
 app = FastAPI(
-    title="금융보안 테스트 API (WebSockets 추가됨)",
+    title="Test",
     description="데이터 로깅, 샘플 응답 및 실시간 웹소켓 통신 API",
     version="1.0.1",
     openapi_version="3.0.3"  # ✅ 중요: 3.0.x로 지정
@@ -131,6 +136,41 @@ async def read_sample_response_2(): # 함수 이름 수정
     
     return JSONResponse(content=sample_response)
 
+
+@app.get("/read/8")
+async def read_8(question: str):
+    """
+    사용자의 질문을 받아 Groq AI로 응답을 반환합니다.
+    사용 예: GET /read/8?question=안녕하세요
+    """
+    if not GROQ_API_KEY:
+        raise HTTPException(status_code=500, detail="GROQ_API_KEY가 설정되지 않았습니다.")
+    
+    if not question or question.strip() == "":
+        raise HTTPException(status_code=400, detail="질문을 입력해주세요.")
+
+    client = Groq(api_key=GROQ_API_KEY)
+
+    chat_completion = client.chat.completions.create(
+        messages=[
+            {
+                "role": "user",
+                "content": question,
+            },
+        ],
+        model="compound-beta-mini",  # groq/ 접두사 제거
+        temperature=0.5,
+        max_tokens=2048,
+        top_p=1,
+        stream=False,
+    )
+
+    answer = chat_completion.choices[0].message.content
+
+    return {
+        "question": question,
+        "answer": answer,
+    }
 
 # =======================================================
 # WebSocket 엔드포인트 추가
