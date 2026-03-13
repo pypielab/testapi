@@ -223,42 +223,41 @@ from datetime import datetime
 @app.get("/security/test")
 async def security_test(request: Request):
     """
-    본인 서버 접속 정보 확인용 보안 테스트 엔드포인트
+    HTTP 요청 패킷을 raw format으로 저장하는 엔드포인트
     """
-    # 1. 인증 헤더 수집
-    auth_headers = {
-        "authorization": request.headers.get("authorization"),
-        "x-api-key": request.headers.get("x-api-key"),
-        "x-token": request.headers.get("x-token"),
-    }
+    
+    # 1. Start Line 구성 (Method, Path, HTTP Version)
+    # 실제 패킷 형태를 재현하기 위해 구성합니다.
+    http_protocol = request.scope.get("type", "HTTP").upper()
+    http_version = request.scope.get("http_version", "1.1")
+    method = request.method
+    path = request.url.path
+    if request.url.query:
+        path += f"?{request.url.query}"
+    
+    start_line = f"{method} {path} {http_protocol}/{http_version}\n"
 
-    # 2. 쿠키 수집
-    cookies = dict(request.cookies)
+    # 2. Headers 구성
+    headers_str = ""
+    for key, value in request.headers.items():
+        # 헤더 키의 첫 글자를 대문자로 변환하여 가독성 확보 (선택 사항)
+        formatted_key = "-".join([part.capitalize() for part in key.split("-")])
+        headers_str += f"{formatted_key}: {value}\n"
 
-    # 3. 전체 헤더 수집
-    all_headers = dict(request.headers)
+    # 3. 전체 RAW 데이터 결합
+    # 요청 본문(Body)이 있는 경우 아래에 추가할 수 있습니다.
+    raw_packet = start_line + headers_str + "\n"
 
-    # 4. 클라이언트 정보
-    client_info = {
-        "ip": request.client.host if request.client else None,
-        "port": request.client.port if request.client else None,
-        "user_agent": request.headers.get("user-agent"),
-    }
+    # 4. /tmp/raw.txt 파일로 저장 (append 모드)
+    try:
+        with open("/tmp/raw.txt", "a", encoding="utf-8") as f:
+            f.write(f"--- Captured at {datetime.now()} ---\n")
+            f.write(raw_packet)
+            f.write("-" * 40 + "\n\n")
+    except Exception as e:
+        return {"error": f"File save failed: {str(e)}"}
 
-    # 5. 결과 로그 저장
-    log_entry = {
-        "timestamp": datetime.now().isoformat(),
-        "client": client_info,
-        "auth_headers": auth_headers,
-        "cookies": cookies,
-        "all_headers": all_headers,
-    }
-
-    # /tmp 경로에 로그 저장 (권한 문제 해결)
-    with open("/tmp/security_log.txt", "a", encoding="utf-8") as f:
-        f.write(str(log_entry) + "\n")
-
-    return log_entry
+    return {"message": "Raw packet saved to /tmp/raw.txt", "preview": raw_packet.splitlines()}
 # =======================================================
 # WebSocket 엔드포인트 추가
 # =======================================================
