@@ -1,10 +1,9 @@
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Query
 from fastapi.responses import JSONResponse
 import json
 from pathlib import Path
 from datetime import datetime
 from fastapi.openapi.utils import get_openapi
-
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from groq import Groq
@@ -121,20 +120,48 @@ async def read_sample_response_1(): # 함수 이름 수정
     return JSONResponse(content=sample_response)
 
 
-@app.get("/read/2", tags=["Data Operations"])
-async def read_sample_response_2(): # 함수 이름 수정
+@app.get("/ai/query", tags=["AI Operations"])
+async def ai_query(
+    # Power Automate의 Key값인 'text'와 일치시킵니다.
+    text: str = Query(None, alias="text") 
+):
     """
-    샘플 JSON 응답 2를 출력합니다.
+    사용자의 질문(text)을 받아 Groq AI로 응답을 반환합니다.
+    Power Automate 호출 예: GET /read/8?text=질문내용
     """
-    sample_response = {
-        "id": 2, # ID를 2로 변경하여 차별화
-        "status": "Success",
-        "description": "testURL",
-        "security_level": "High",
-        "timestamp": "EdHHa8Y_hEJJgiqvNdZccvoB0vtNM19aqaT5XxeDp9qYxA "
-   }
+    if not GROQ_API_KEY:
+        raise HTTPException(status_code=500, detail="GROQ_API_KEY가 설정되지 않았습니다.")
     
-    return JSONResponse(content=sample_response)
+    # 'text' 매개변수가 비어있는지 확인
+    if not text or text.strip() == "":
+        raise HTTPException(status_code=400, detail="질문(text)을 입력해주세요.")
+
+    try:
+        client = Groq(api_key=GROQ_API_KEY)
+
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "user",
+                    "content": text, # 수신한 text를 AI에게 전달
+                },
+            ],
+            model="llama3-8b-8192",  # 모델명은 사용 가능한 최신 것으로 확인 필요 (예: llama3 등)
+            temperature=0.5,
+            max_tokens=2048,
+            top_p=1,
+            stream=False,
+        )
+
+        ai_answer = chat_completion.choices[0].message.content
+
+        return {
+            "question": text,
+            "answer": ai_answer,
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI 호출 중 오류 발생: {str(e)}")
 
 
 @app.get("/read/8")
