@@ -8,7 +8,9 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from groq import Groq
 import os
+from urllib.parse import quote
 
+import feedparser
 
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 
@@ -119,9 +121,84 @@ async def read_sample_response_1(): # 함수 이름 수정
     
     return JSONResponse(content=sample_response)
 
+def get_google_news_context(query: str):
+    """
+    API 키 없이 구글 뉴스 RSS를 통해 실시간 정보를 가져옵니다.
+    """
+    try:
+        encoded_query = quote(query)
+        # 한국어(hl=ko), 한국 지역(gl=KR) 설정
+        rss_url = f"https://news.google.com/rss/search?q={encoded_query}&hl=ko&gl=KR&ceid=KR:ko"
+        feed = feedparser.parse(rss_url)
+        
+        # 상위 5개의 뉴스 제목을 추출하여 컨텍스트로 생성
+        news_items = []
+        for entry in feed.entries[:5]:
+            news_items.append(f"- {entry.title}")
+        
+        if not news_items:
+            return ""
+            
+        return "\n[최신 관련 정보]\n" + "\n".join(news_items)
+    except Exception:
+        return ""
+    
 
 @app.get("/ai/query", tags=["AI Operations"])
 async def ai_query(
+    # Power Automate의 Key값인 'text'와 일치시킵니다.
+    text: str = Query(None, alias="text") 
+):
+    """
+    사용자의 질문을 받아 실시간 정보(RSS)와 결합 후 AI 응답을 반환합니다.
+    """
+    if not GROQ_API_KEY:
+        raise HTTPException(status_code=500, detail="GROQ_API_KEY가 설정되지 않았습니다.")
+    
+    if not text or text.strip() == "":
+        raise HTTPException(status_code=400, detail="질문을 입력해주세요.")
+
+    try:
+        # 1. 실시간 정보 필요 여부 확인 및 검색
+        search_keywords = ["오늘", "뉴스", "토픽", "현재", "날씨", "최신", "이슈"]
+        context = ""
+        if any(kw in text for kw in search_keywords):
+            context = get_google_news_context(text)
+
+        # 2. AI 호출 (Groq)
+        client = Groq(api_key=GROQ_API_KEY)
+        
+        # 시스템 프롬프트 설정 (검색 결과가 있을 경우 지침 추가)
+        system_prompt = "당신은 유능한 비서입니다."
+        if context:
+            system_prompt += f"\n\n아래 제공된 최신 정보를 바탕으로 사용자의 질문에 답변하세요.\n{context}"
+
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": text},
+            ],
+            model="openai/gpt-oss-120b",
+            temperature=0.5,
+            max_tokens=2048,
+            top_p=1,
+            stream=False,
+        )
+
+        ai_answer = chat_completion.choices[0].message.content
+
+        # 3. 결과 반환
+        return {
+            "question": text,
+            "answer": ai_answer,
+            "has_context": bool(context) # 뉴스 참고 여부 확인용
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"처리 중 오류 발생: {str(e)}")    
+
+@app.get("/ai/query2", tags=["AI Operations"])
+async def ai_query2(
     # Power Automate의 Key값인 'text'와 일치시킵니다.
     text: str = Query(None, alias="text") 
 ):
