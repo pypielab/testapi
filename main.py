@@ -146,7 +146,7 @@ async def ai_query(
                     "content": text, # 수신한 text를 AI에게 전달
                 },
             ],
-            model="groq/compound",  # 모델명은 사용 가능한 최신 것으로 확인 필요 (예: llama3 등)
+            model="openai/gpt-oss-120b",  # 모델명은 사용 가능한 최신 것으로 확인 필요 (예: llama3 등)
             temperature=0.5,
             max_tokens=2048,
             top_p=1,
