@@ -121,26 +121,64 @@ async def read_sample_response_1(): # 함수 이름 수정
     
     return JSONResponse(content=sample_response)
 
+from datetime import datetime, timezone, timedelta
+
 def get_google_news_context(query: str):
     """
-    API 키 없이 구글 뉴스 RSS를 통해 실시간 정보를 가져옵니다.
+    Google News RSS에서 최신 뉴스만 필터링하여 가져옵니다.
     """
     try:
-        encoded_query = quote(query)
-        # 한국어(hl=ko), 한국 지역(gl=KR) 설정
+        # 불필요한 말 제거 후 핵심 키워드만 검색
+        stop_words = ["오늘", "최신", "뉴스", "알려줘", "알려주세요", "어때", "어떻게"]
+        clean_query = query
+        for word in stop_words:
+            clean_query = clean_query.replace(word, "")
+        clean_query = clean_query.strip() or query  # 다 지워지면 원본 사용
+
+        encoded_query = quote(clean_query)
         rss_url = f"https://news.google.com/rss/search?q={encoded_query}&hl=ko&gl=KR&ceid=KR:ko"
         feed = feedparser.parse(rss_url)
-        
-        # 상위 5개의 뉴스 제목을 추출하여 컨텍스트로 생성
-        news_items = []
-        for entry in feed.entries[:5]:
-            news_items.append(f"- {entry.title}")
-        
-        if not news_items:
+
+        if not feed.entries:
             return ""
-            
-        return "\n[최신 관련 정보]\n" + "\n".join(news_items)
-    except Exception:
+
+        # 48시간 이내 뉴스만 필터링
+        KST = timezone(timedelta(hours=9))
+        now = datetime.now(KST)
+        cutoff = now - timedelta(hours=48)
+
+        news_items = []
+        for entry in feed.entries[:10]:  # 더 많이 검토 후 필터
+            # 날짜 파싱
+            published = entry.get("published_parsed")
+            if published:
+                pub_dt = datetime(*published[:6], tzinfo=timezone.utc).astimezone(KST)
+                if pub_dt < cutoff:
+                    continue  # 오래된 뉴스 제외
+                time_str = pub_dt.strftime("%m/%d %H:%M")
+            else:
+                time_str = "날짜 미상"
+
+            # 제목 + 요약 + 날짜 포함
+            summary = getattr(entry, "summary", "")
+            # summary에 HTML 태그 제거
+            import re
+            summary = re.sub(r"<[^>]+>", "", summary).strip()
+            summary = summary[:100] + "..." if len(summary) > 100 else summary
+
+            news_items.append(f"[{time_str}] {entry.title}\n  → {summary}")
+
+            if len(news_items) >= 5:
+                break
+
+        if not news_items:
+            # 최신 뉴스가 없으면 그냥 상위 3개라도 반환
+            for entry in feed.entries[:3]:
+                news_items.append(f"- {entry.title}")
+
+        return "\n[최신 관련 뉴스]\n" + "\n".join(news_items)
+
+    except Exception as e:
         return ""
     
 
