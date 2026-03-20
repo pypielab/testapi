@@ -123,76 +123,84 @@ async def read_sample_response_1(): # 함수 이름 수정
 
 from datetime import datetime, timezone, timedelta
 
+지금까지 논의한 모든 수정사항을 반영한 최종 코드입니다.
+pythonimport re
+from datetime import datetime, timezone, timedelta
+from urllib.parse import quote
+import feedparser
+
 def get_google_news_context(query: str):
     """
     Google News RSS에서 최신 뉴스만 필터링하여 가져옵니다.
     """
     try:
-        # 불필요한 말 제거 후 핵심 키워드만 검색
-        stop_words = ["오늘", "최신", "뉴스", "알려줘", "알려주세요", "어때", "어떻게"]
+        stop_words = ["오늘", "최신", "뉴스", "알려줘", "알려주세요", "어때", "어떻게", "날짜"]
         clean_query = query
         for word in stop_words:
             clean_query = clean_query.replace(word, "")
-        clean_query = clean_query.strip() or query  # 다 지워지면 원본 사용
+        clean_query = clean_query.strip()
 
-        encoded_query = quote(clean_query)
-        rss_url = f"https://news.google.com/rss/search?q={encoded_query}&hl=ko&gl=KR&ceid=KR:ko"
+        # ✅ 정제 후 키워드가 너무 짧으면 종합 뉴스 피드 사용
+        if len(clean_query) < 2:
+            rss_url = "https://news.google.com/rss?hl=ko&gl=KR&ceid=KR:ko"
+        else:
+            rss_url = f"https://news.google.com/rss/search?q={quote(clean_query)}&hl=ko&gl=KR&ceid=KR:ko"
+
         feed = feedparser.parse(rss_url)
-
         if not feed.entries:
             return ""
 
-        # 48시간 이내 뉴스만 필터링
+        # ✅ 48시간 이내 뉴스만 필터링
         KST = timezone(timedelta(hours=9))
         now = datetime.now(KST)
         cutoff = now - timedelta(hours=48)
 
         news_items = []
-        for entry in feed.entries[:10]:  # 더 많이 검토 후 필터
-            # 날짜 파싱
+        for entry in feed.entries[:15]:
             published = entry.get("published_parsed")
             if published:
                 pub_dt = datetime(*published[:6], tzinfo=timezone.utc).astimezone(KST)
                 if pub_dt < cutoff:
-                    continue  # 오래된 뉴스 제외
+                    continue
                 time_str = pub_dt.strftime("%m/%d %H:%M")
             else:
                 time_str = "날짜 미상"
 
-            # 제목 + 요약 + 날짜 포함
-            summary = getattr(entry, "summary", "")
-            # summary에 HTML 태그 제거
-            import re
-            summary = re.sub(r"<[^>]+>", "", summary).strip()
-            summary = summary[:100] + "..." if len(summary) > 100 else summary
+            # ✅ summary HTML 제거 후 200자까지 활용
+            raw_summary = getattr(entry, "summary", "") or ""
+            summary = re.sub(r"<[^>]+>", "", raw_summary).strip()
+            summary = summary[:200] + "..." if len(summary) > 200 else summary
 
-            news_items.append(f"[{time_str}] {entry.title}\n  → {summary}")
+            # ✅ summary가 제목과 중복이면 제목만 표시
+            if summary and summary[:20] not in entry.title[:20]:
+                news_items.append(f"[{time_str}] {entry.title}\n  내용: {summary}")
+            else:
+                news_items.append(f"[{time_str}] {entry.title}")
 
             if len(news_items) >= 5:
                 break
 
+        # 최신 뉴스가 없으면 상위 3개 fallback
         if not news_items:
-            # 최신 뉴스가 없으면 그냥 상위 3개라도 반환
             for entry in feed.entries[:3]:
                 news_items.append(f"- {entry.title}")
 
-        return "\n[최신 관련 뉴스]\n" + "\n".join(news_items)
+        return "\n[최신 뉴스]\n" + "\n".join(news_items)
 
-    except Exception as e:
+    except Exception:
         return ""
-    
+
 
 @app.get("/ai/query", tags=["AI Operations"])
 async def ai_query(
-    # Power Automate의 Key값인 'text'와 일치시킵니다.
-    text: str = Query(None, alias="text") 
+    text: str = Query(None, alias="text")
 ):
     """
     사용자의 질문을 받아 실시간 정보(RSS)와 결합 후 AI 응답을 반환합니다.
     """
     if not GROQ_API_KEY:
         raise HTTPException(status_code=500, detail="GROQ_API_KEY가 설정되지 않았습니다.")
-    
+
     if not text or text.strip() == "":
         raise HTTPException(status_code=400, detail="질문을 입력해주세요.")
 
@@ -203,20 +211,22 @@ async def ai_query(
         if any(kw in text for kw in search_keywords):
             context = get_google_news_context(text)
 
-        # 2. AI 호출 (Groq)
-        client = Groq(api_key=GROQ_API_KEY)
-        
-        # 시스템 프롬프트 설정 (검색 결과가 있을 경우 지침 추가)
-        system_prompt = "당신은 유능한 비서입니다."
-        if context:
-            system_prompt += f"\n\n아래 제공된 최신 정보를 바탕으로 사용자의 질문에 답변하세요.\n{context}"
+        # 2. ✅ 오늘 날짜를 KST 기준으로 시스템 프롬프트에 주입
+        KST = timezone(timedelta(hours=9))
+        today_str = datetime.now(KST).strftime("%Y년 %m월 %d일")
 
+        system_prompt = f"당신은 유능한 비서입니다. 오늘 날짜는 {today_str}입니다."
+        if context:
+            system_prompt += f"\n\n아래 제공된 최신 뉴스를 바탕으로 구체적으로 요약하여 답변하세요.\n{context}"
+
+        # 3. ✅ 올바른 Groq 모델명 사용
+        client = Groq(api_key=GROQ_API_KEY)
         chat_completion = client.chat.completions.create(
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": text},
             ],
-            model="openai/gpt-oss-120b",
+            model="llama-3.3-70b-versatile",  # ✅ openai/gpt-oss-120b → 수정
             temperature=0.5,
             max_tokens=2048,
             top_p=1,
@@ -225,15 +235,14 @@ async def ai_query(
 
         ai_answer = chat_completion.choices[0].message.content
 
-        # 3. 결과 반환
         return {
             "question": text,
             "answer": ai_answer,
-            "has_context": bool(context) # 뉴스 참고 여부 확인용
+            "has_context": bool(context)
         }
-    
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"처리 중 오류 발생: {str(e)}")    
+        raise HTTPException(status_code=500, detail=f"처리 중 오류 발생: {str(e)}") 
 
 @app.get("/ai/query2", tags=["AI Operations"])
 async def ai_query2(
