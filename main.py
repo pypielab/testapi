@@ -123,8 +123,7 @@ async def read_sample_response_1(): # 함수 이름 수정
 
 from datetime import datetime, timezone, timedelta
 
-지금까지 논의한 모든 수정사항을 반영한 최종 코드입니다.
-pythonimport re
+
 from datetime import datetime, timezone, timedelta
 from urllib.parse import quote
 import feedparser
